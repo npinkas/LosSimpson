@@ -1,200 +1,123 @@
 module Library where
 import PdePreludat
 
-
-data Relleno = DulceDeLeche | Mousse | Fruta deriving (Show, Eq)
-type Peso = Number
-type Dulzor = Number
 type Nombre = String
 type Dinero = Number
+type Felicidad = Number
 
-data Alfajor = UnAlfajor {
-    relleno :: [Relleno],
-    peso :: Peso,
-    dulzorInnato :: Dulzor,
-    nombre :: Nombre
+data Personaje = UnPersonaje{
+    nombre :: Nombre,
+    dinero :: Dinero,
+    felicidad :: Felicidad
 }deriving (Show, Eq)
 
+lisa :: Personaje
+lisa = UnPersonaje "Lisa" 200 10
 
-jorgito = UnAlfajor [DulceDeLeche] 80 8 "Jorgito"
+homero :: Personaje
+homero = UnPersonaje "Homero" 120 15
 
-havanna = UnAlfajor [Mousse, Mousse] 60 12 "Havanna"
+skinner :: Personaje
+skinner = UnPersonaje "Skinner" 200 20
 
-capitanDelEspacio = UnAlfajor [DulceDeLeche] 40 12 "Capitán del Espacio"
+srBurns :: Personaje
+srBurns = UnPersonaje "Sr Burns" 400 32
 
 --Parte 1
 
-type Propiedad = Alfajor -> Number
+type Actividad = Personaje -> Personaje
 
---Propiedad 1
+irEscuelaElementalSpringfield :: Actividad
+irEscuelaElementalSpringfield personaje
+    |nombre personaje == "Lisa" = modificarFelicidad 20 lisa
+    |otherwise = modificarFelicidad (-20) personaje
 
-coeficienteDeDulzor :: Propiedad
-coeficienteDeDulzor alfajor = div (dulzorInnato alfajor) (peso alfajor)
+comerCiertaCantDonas :: Number -> Actividad
+comerCiertaCantDonas cantDonas = modificarDinero 10 . modificarNCantVeces (modificarFelicidad 10) cantDonas 
 
---Propiedad 2
+irATrabajarPlantaNuclear :: Actividad
+irATrabajarPlantaNuclear = modificarDinero 14 
 
-precioAlfajor :: Propiedad
-precioAlfajor alfajor = doblePesoAlfajor alfajor + sumatoriaRelleno alfajor
+irATrabajarDirector :: Actividad
+irATrabajarDirector = irEscuelaElementalSpringfield
 
-sumatoriaRelleno ::  Alfajor -> Number
-sumatoriaRelleno alfajor = sum (map precioRellenos (relleno alfajor))
+empezarUniversidad :: Actividad
+empezarUniversidad = modificarFelicidad 20 . modificarNombre "Estudiante " 
 
-doblePesoAlfajor :: Alfajor -> Number
-doblePesoAlfajor = (2*) . peso
+modificarFelicidad ::Felicidad -> Personaje -> Personaje
+modificarFelicidad x personaje = personaje {felicidad = felicidad personaje + x}
 
-precioRellenos :: Relleno -> Number
-precioRellenos relleno
-    | relleno == DulceDeLeche = 12
-    | relleno == Mousse = 15
-    | relleno == Fruta = 10
+modificarDinero :: Dinero -> Personaje -> Personaje
+modificarDinero dineroNuevo personaje = personaje {dinero = dinero personaje + dineroNuevo}
 
+modificarNCantVeces :: (Personaje -> Personaje) -> Number -> Personaje -> Personaje
+modificarNCantVeces _ 0 personaje = personaje
+modificarNCantVeces prop n personaje = modificarNCantVeces prop (n - 1) (prop personaje)
 
---Propiedad 3
+modificarNombre :: Nombre -> Personaje -> Personaje
+modificarNombre nuevoNombre personaje = personaje {nombre = nuevoNombre ++ nombre personaje}
 
+{-
 
-tieneCapasRelleno :: Alfajor -> Bool
-tieneCapasRelleno = not . null . relleno
+-homero come una docena de donas
 
-todasCapasIguales ::  Alfajor -> Bool
-todasCapasIguales alfajor = all (== head (relleno alfajor)) (relleno alfajor)
+ghci> comerCiertaCantDonas 12 homero  
+UnPersonaje {nombre = "Homero", dinero = 130, felicidad = 165}
 
-coefDulzorMayorIgual :: Number -> Alfajor -> Bool
-coefDulzorMayorIgual x = (>= x) . dulzorInnato
+- skinner va a trabajar como director
 
-esPotable :: Alfajor-> Bool
-esPotable alfajor = tieneCapasRelleno alfajor && todasCapasIguales alfajor && coefDulzorMayorIgual 0.1 alfajor
+ghci> irATrabajarDirector skinner 
+UnPersonaje {nombre = "Skinner", dinero = 200, felicidad = 0}
+
+lisa va a la escuela y luego realiza la actividad inventada
+
+ghci> empezarUniversidad (irEscuelaElementalSpringfield lisa)
+UnPersonaje {nombre = "Estudiante Lisa", dinero = 200, felicidad = 50}
+
+-}
 
 --Parte 2
 
--- Ej a
+type Logro = Personaje -> Bool
 
-modificarPeso :: Peso -> Alfajor -> Alfajor
-modificarPeso nuevoPeso alfajor = alfajor {peso = peso alfajor + nuevoPeso}
+serMillonario :: Logro
+serMillonario = (> dinero srBurns) . dinero
 
-modificarDulzor :: Dulzor -> Alfajor -> Alfajor
-modificarDulzor nuevoDulzor alfajor = alfajor {dulzorInnato = dulzorInnato alfajor + nuevoDulzor}
+alegrarse :: Number ->  Logro
+alegrarse felicidadDeseada = (> felicidadDeseada) . felicidad 
 
-abaratarAlfajor :: Alfajor -> Alfajor
-abaratarAlfajor = modificarDulzor (-7) . modificarPeso (-10)
+verProgramaKrosti :: Logro
+verProgramaKrosti = (>= 10) . dinero
 
-
--- Parte b
-
-renombrarAlfajor :: Nombre -> Alfajor -> Alfajor
-renombrarAlfajor nuevoNombre alfajor = alfajor{nombre = nuevoNombre}
-
--- Parte c
-
-agregarCapa :: Relleno-> Alfajor -> Alfajor
-agregarCapa nuevoRelleno alfajor = alfajor {relleno = relleno alfajor ++ [nuevoRelleno]}
-
--- Parte d
-
-obtenerCapaDelMismoTipo :: Alfajor -> Relleno
-obtenerCapaDelMismoTipo alfajor = head (relleno alfajor)
-
-agregarNombrePremium :: Alfajor -> Alfajor
-agregarNombrePremium alfajor = alfajor {nombre = "Premium " ++ nombre alfajor}
-
-modificarAlfajorPremium :: Alfajor -> Alfajor
-modificarAlfajorPremium alfajor = (agregarNombrePremium . agregarCapa (obtenerCapaDelMismoTipo alfajor)) alfajor
-
-hacerPremium :: Alfajor -> Alfajor
-hacerPremium alfajor
-    |esPotable alfajor = modificarAlfajorPremium alfajor
-    |otherwise = alfajor
-
--- Parte e
-
-hacerPremiumDeCiertoGrado :: Number ->Alfajor -> Alfajor
-hacerPremiumDeCiertoGrado 1 alfajor = hacerPremium alfajor
-hacerPremiumDeCiertoGrado n  alfajor = hacerPremiumDeCiertoGrado (n-1) (hacerPremium alfajor) 
-
---Parte f
-
-jorgitito :: Alfajor
-jorgitito = abaratarAlfajor jorgito
-
-jorgelin :: Alfajor
-jorgelin = (renombrarAlfajor "Jorgelin" . agregarCapa DulceDeLeche) jorgito
-
-capitanCostaACosta :: Alfajor
-capitanCostaACosta =  (renombrarAlfajor "Capitan del Espacio Costa a Costa" . hacerPremiumDeCiertoGrado 4 . abaratarAlfajor) capitanDelEspacio
+enEquilibrio :: Logro
+enEquilibrio personaje = dinero personaje == felicidad personaje
 
 -- Parte 3
 
---Ej a
+esDecisiva :: Logro -> Actividad  -> Personaje -> Bool
+esDecisiva logro actividad personaje 
+    |not (logro personaje) = logro (actividad personaje)
+    |otherwise = False 
 
-data Cliente = UnCliente{
-    dinero :: Dinero,
-    alfajoresComprados :: [Alfajor],
-    criterio :: [Criterio]
-} deriving (Show, Eq)
+-- Parte 4
 
-type Criterio = Alfajor -> Bool
+aplicarActDecisiva :: Logro -> [Actividad]  -> Personaje -> Personaje
+aplicarActDecisiva logro actividades personaje = (primerActividadDecisiva logro actividades personaje) personaje
 
-emi :: Cliente
-emi = UnCliente 120 [] [buscaMarca "Capitan del Espacio"]
+primerActividadDecisiva ::  Logro -> [Actividad]  -> Personaje -> Actividad
+primerActividadDecisiva _ [] personaje = id
+primerActividadDecisiva logro (x : xs) personaje
+    |esDecisiva logro x  personaje = x
+    |otherwise = primerActividadDecisiva logro xs personaje
 
-tomi :: Cliente
-tomi = UnCliente 1000 [] [esPretencioso, esDulcero]
+-- Parte 5
 
-dante :: Cliente
-dante = UnCliente 200 [] [noTieneCiertoRelleno DulceDeLeche, esExtraño]
+actividadesInfinitas :: Actividad -> [Actividad]
+actividadesInfinitas actividad = actividad : actividadesInfinitas actividad
 
-juan :: Cliente
-juan = UnCliente 500 [] [esDulcero, buscaMarca "Jorgito", esPretencioso, noTieneCiertoRelleno Mousse]
+{-
+En caso que haya una actividad que sea decisiva, Haskell no evaluará el resto de la lista ya que opera con Lazy Evaluation. Por ende, cuando encuentre una actividad que cumpla la condicion, la devolverá sin necesidad de evaluar el resto.
 
-contieneEnElNombre :: String -> String -> Bool
-contieneEnElNombre [] _ = True
-contieneEnElNombre _ [] = False
-contieneEnElNombre (p:ps) (s:ss)
-  | p == s = contieneEnElNombre ps ss
-  | otherwise = contieneEnElNombre (p:ps) ss
+En cambio, si no hay ninguna actividad decisiva, Haskell continuará recorriendo la lista hasta generar un stack overflow.
 
-buscaMarca :: Nombre -> Criterio
-buscaMarca marca alfajor = contieneEnElNombre marca (nombre alfajor)
-
-esPretencioso :: Criterio
-esPretencioso alfajor = contieneEnElNombre "Premium" (nombre alfajor)
-
-esDulcero :: Criterio
-esDulcero = (>0.15) . dulzorInnato
-
-noTieneCiertoRelleno :: Relleno ->Criterio
-noTieneCiertoRelleno rellenoBuscado alfajor = not $ elem rellenoBuscado (relleno alfajor)
-
-esExtraño :: Criterio
-esExtraño alfajor = not (esPotable alfajor)
-
---Ej b
-
-type Alfajores = [Alfajor]
-
-leGustaAlfajor :: Cliente -> Alfajor -> Bool
-leGustaAlfajor cliente alfajor  = all ($ alfajor) (criterio cliente)
-
-alfajoresQueLeGustanCliente :: Alfajores -> Cliente -> Alfajores
-alfajoresQueLeGustanCliente alfajores cliente = filter (leGustaAlfajor cliente) alfajores
-
---Ej c
-
-comprarAlfajor :: Alfajor -> Cliente -> Cliente
-comprarAlfajor alfajor cliente
-    |puedeComprarAlfajor alfajor cliente = (modificarDinero alfajor . agregarAlfajorComprado alfajor) cliente
-    |otherwise = cliente
-
-
-agregarAlfajorComprado ::  Alfajor -> Cliente -> Cliente
-agregarAlfajorComprado alfajor cliente = cliente {alfajoresComprados = alfajoresComprados cliente ++ [alfajor]}
-
-modificarDinero :: Alfajor -> Cliente -> Cliente
-modificarDinero alfajor cliente = cliente {dinero = dinero cliente - precioAlfajor alfajor}
-
-puedeComprarAlfajor ::  Alfajor -> Cliente -> Bool
-puedeComprarAlfajor alfajor cliente = dinero cliente >= precioAlfajor alfajor 
-
---Ej d
-
-comprarAlfajoresGustanCliente ::  Alfajores -> Cliente -> Cliente
-comprarAlfajoresGustanCliente alfajores cliente = foldl (flip comprarAlfajor) cliente (alfajoresQueLeGustanCliente alfajores cliente)
+-}
